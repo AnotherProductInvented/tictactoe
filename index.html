@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Another Product Invented Tic Tac Toe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Base Styles */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    h1 {
+      margin: 1rem 0 0.5rem;
+      text-align: center;
+      line-height: 1.2;
+    }
+    /* Game Container & Canvas */
+    #gameContainer {
+      position: relative;
+      width: 600px;
+      max-width: 100%;
+      margin-bottom: 10px;
+    }
+    canvas {
+      display: block;
+      background: #eee;
+      width: 100%;
+      height: auto;
+      border: 2px solid #333;
+      touch-action: none;
+    }
+    /* Overlays */
+    .overlayScreen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.95);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      z-index: 10;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    button {
+      font-size: 18px;
+      margin: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    /* Bottom Bar */
+    #bottomBar {
+      width: 600px;
+      max-width: 100%;
+      background: #fff;
+      border-top: 1px solid #ccc;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      box-sizing: border-box;
+      margin-top: 5px;
+    }
+    /* Logo */
+    #logo {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      max-width: 100px;
+      z-index: 2000;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <h1>Another Product Invented<br>Tic Tac Toe</h1>
+  
+  <!-- Game Container -->
+  <div id="gameContainer">
+    <!-- Main Menu Overlay -->
+    <div id="menuScreen" class="overlayScreen" style="display: flex;">
+      <button id="newGameBtn">New Game</button>
+      <button id="instructionsBtn">Instructions</button>
+    </div>
+    <!-- Instructions Overlay -->
+    <div id="instructionsScreen" class="overlayScreen">
+      <h2>How to Play Tic Tac Toe</h2>
+      <p>
+        Two players take turns placing their mark (X or O) on the 3×3 grid.<br>
+        The first player to align three marks in a row, column, or diagonal wins.<br>
+        If all squares are filled without a winning line, the game is a draw.<br>
+        Press [M] to return to the Main Menu.
+      </p>
+    </div>
+    <!-- Game Over Overlay -->
+    <div id="gameOverScreen" class="overlayScreen">
+      <h2 id="gameOverText"></h2>
+      <button id="gameOverNewGameBtn">New Game</button>
+      <p>Press [M] to return to the Main Menu.</p>
+    </div>
+    
+    <!-- The Game Canvas -->
+    <canvas id="ticTacToeCanvas" width="600" height="600"></canvas>
+  </div>
+  
+  <!-- Bottom Bar for Messages -->
+  <div id="bottomBar">
+    <span id="messageDisplay">Welcome! Click "New Game" to begin.</span>
+  </div>
+  
+  <!-- Logo -->
+  <img id="logo" src="logo.png" alt="Logo">
+  
+  <script>
+    /************ Global Variables & State ************/
+    const canvas = document.getElementById("ticTacToeCanvas");
+    const ctx = canvas.getContext("2d");
+    const menuScreen = document.getElementById("menuScreen");
+    const instructionsScreen = document.getElementById("instructionsScreen");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const bottomBar = document.getElementById("bottomBar");
+    const messageDisplay = document.getElementById("messageDisplay");
+    const gameOverText = document.getElementById("gameOverText");
+    
+    let gameState = "menu"; // "menu", "instructions", "playing", "game_over"
+    let board = []; // 3x3 array for Tic Tac Toe board (null, "X", "O")
+    let currentPlayer = "X"; // "X" or "O"
+    
+    const BOARD_SIZE = 600;
+    const CELL_SIZE = BOARD_SIZE / 3;
+    
+    /************ Game Setup ************/
+    function initBoard() {
+      board = Array.from({ length: 3 }, () => Array(3).fill(null));
+    }
+    
+    /************ Drawing Functions ************/
+    function drawBoard() {
+      // Clear canvas.
+      ctx.clearRect(0, 0, BOARD_SIZE, BOARD_SIZE);
+      // Draw grid lines.
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 4;
+      // Vertical lines.
+      ctx.beginPath();
+      ctx.moveTo(CELL_SIZE, 0);
+      ctx.lineTo(CELL_SIZE, BOARD_SIZE);
+      ctx.moveTo(2 * CELL_SIZE, 0);
+      ctx.lineTo(2 * CELL_SIZE, BOARD_SIZE);
+      // Horizontal lines.
+      ctx.moveTo(0, CELL_SIZE);
+      ctx.lineTo(BOARD_SIZE, CELL_SIZE);
+      ctx.moveTo(0, 2 * CELL_SIZE);
+      ctx.lineTo(BOARD_SIZE, 2 * CELL_SIZE);
+      ctx.stroke();
+      
+      // Draw marks (X and O).
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const mark = board[r][c];
+          if (mark) drawMark(r, c, mark);
+        }
+      }
+    }
+    
+    function drawMark(row, col, mark) {
+      const centerX = col * CELL_SIZE + CELL_SIZE/2;
+      const centerY = row * CELL_SIZE + CELL_SIZE/2;
+      ctx.lineWidth = 6;
+      if (mark === "X") {
+        ctx.strokeStyle = "#e74c3c";
+        ctx.beginPath();
+        ctx.moveTo(centerX - 40, centerY - 40);
+        ctx.lineTo(centerX + 40, centerY + 40);
+        ctx.moveTo(centerX + 40, centerY - 40);
+        ctx.lineTo(centerX - 40, centerY + 40);
+        ctx.stroke();
+      } else if (mark === "O") {
+        ctx.strokeStyle = "#3498db";
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+    
+    function redraw() {
+      drawBoard();
+      messageDisplay.textContent = "Turn: " + currentPlayer;
+      bottomBar.style.display = "flex";
+    }
+    
+    /************ Game Logic ************/
+    // Determine if a move is legal (if the cell is empty).
+    function isLegalMove(row, col) {
+      return board[row][col] === null;
+    }
+    
+    // Check for win or draw.
+    function checkGameOver() {
+      // Check rows, columns, and diagonals.
+      const lines = [];
+      // Rows
+      for (let r = 0; r < 3; r++) {
+        lines.push(board[r]);
+      }
+      // Columns
+      for (let c = 0; c < 3; c++) {
+        lines.push([board[0][c], board[1][c], board[2][c]]);
+      }
+      // Diagonals
+      lines.push([board[0][0], board[1][1], board[2][2]]);
+      lines.push([board[0][2], board[1][1], board[2][0]]);
+      
+      for (let line of lines) {
+        if (line.every(mark => mark === "X")) return "X";
+        if (line.every(mark => mark === "O")) return "O";
+      }
+      
+      // Check for draw.
+      if (board.flat().every(cell => cell !== null)) return "draw";
+      
+      return null;
+    }
+    
+    function makeMove(row, col) {
+      if (!isLegalMove(row, col)) return;
+      board[row][col] = currentPlayer;
+      const winner = checkGameOver();
+      if (winner) {
+        gameState = "game_over";
+        if (winner === "draw") {
+          gameOverText.innerHTML = "Game Over!<br>Draw!";
+        } else {
+          gameOverText.innerHTML = "Game Over!<br>" + winner + " wins!";
+        }
+        showGameOver();
+      } else {
+        currentPlayer = (currentPlayer === "X") ? "O" : "X";
+      }
+      redraw();
+    }
+    
+    /************ Input Handling ************/
+    canvas.addEventListener("click", (e) => {
+      if (gameState !== "playing") return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const col = Math.floor(x / CELL_SIZE);
+      const row = Math.floor(y / CELL_SIZE);
+      makeMove(row, col);
+    });
+    
+    /************ Overlay & Menu Management ************/
+    function hideAllScreens() {
+      menuScreen.style.display = "none";
+      instructionsScreen.style.display = "none";
+      gameOverScreen.style.display = "none";
+      bottomBar.style.display = "none";
+    }
+    
+    function showMenu() {
+      hideAllScreens();
+      gameState = "menu";
+      menuScreen.style.display = "flex";
+    }
+    
+    function showInstructions() {
+      hideAllScreens();
+      gameState = "instructions";
+      instructionsScreen.style.display = "flex";
+    }
+    
+    function showGameOver() {
+      hideAllScreens();
+      gameState = "game_over";
+      gameOverScreen.style.display = "flex";
+    }
+    
+    function startGame() {
+      hideAllScreens();
+      gameState = "playing";
+      initBoard();
+      currentPlayer = "X";
+      redraw();
+    }
+    
+    /************ Button Handlers ************/
+    document.getElementById("newGameBtn").onclick = startGame;
+    document.getElementById("instructionsBtn").onclick = showInstructions;
+    document.getElementById("gameOverNewGameBtn").onclick = showMenu;
+    
+    document.addEventListener("keydown", (e) => {
+      const key = e.key.toLowerCase();
+      if (["playing", "game_over", "instructions"].includes(gameState)) {
+        if (key === "m") showMenu();
+      }
+    });
+    
+    // Start by showing the main menu.
+    showMenu();
+  </script>
+</body>
+</html>
