@@ -90,6 +90,20 @@
       <button id="newGameBtn">New Game</button>
       <button id="instructionsBtn">Instructions</button>
     </div>
+    <!-- Mark Choice Overlay -->
+    <div id="markChoiceScreen" class="overlayScreen">
+      <p>Choose your mark:</p>
+      <button id="chooseXBtn">X [X]</button>
+      <button id="chooseOBtn">O [O]</button>
+      <p>You can also press X or O on your keyboard.</p>
+    </div>
+    <!-- First Move Choice Overlay -->
+    <div id="firstMoveScreen" class="overlayScreen">
+      <p>Who goes first?</p>
+      <button id="firstMeBtn">Me</button>
+      <button id="firstYouBtn">You</button>
+      <p>You can also press M (for Me) or Y (for You) on your keyboard.</p>
+    </div>
     <!-- Instructions Overlay -->
     <div id="instructionsScreen" class="overlayScreen">
       <h2>How to Play Tic Tac Toe</h2>
@@ -124,15 +138,19 @@
     const canvas = document.getElementById("ticTacToeCanvas");
     const ctx = canvas.getContext("2d");
     const menuScreen = document.getElementById("menuScreen");
+    const markChoiceScreen = document.getElementById("markChoiceScreen");
+    const firstMoveScreen = document.getElementById("firstMoveScreen");
     const instructionsScreen = document.getElementById("instructionsScreen");
     const gameOverScreen = document.getElementById("gameOverScreen");
     const bottomBar = document.getElementById("bottomBar");
     const messageDisplay = document.getElementById("messageDisplay");
     const gameOverText = document.getElementById("gameOverText");
     
-    let gameState = "menu"; // "menu", "instructions", "playing", "game_over"
-    let board = []; // 3x3 array for Tic Tac Toe board (null, "X", "O")
-    let currentPlayer = "X"; // "X" or "O"
+    let gameState = "menu";  // "menu", "mark_choice", "first_move_choice", "playing", "instructions", "game_over"
+    let playerMark = null;   // "X" or "O" chosen by human
+    let aiMark = null;       // The other mark
+    let currentPlayer = "X"; // Will be set after first move choice
+    let board = [];          // 3x3 board array (null, "X", "O")
     
     const BOARD_SIZE = 600;
     const CELL_SIZE = BOARD_SIZE / 3;
@@ -162,7 +180,7 @@
       ctx.lineTo(BOARD_SIZE, 2 * CELL_SIZE);
       ctx.stroke();
       
-      // Draw marks (X and O).
+      // Draw marks.
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 3; c++) {
           const mark = board[r][c];
@@ -172,8 +190,8 @@
     }
     
     function drawMark(row, col, mark) {
-      const centerX = col * CELL_SIZE + CELL_SIZE/2;
-      const centerY = row * CELL_SIZE + CELL_SIZE/2;
+      const centerX = col * CELL_SIZE + CELL_SIZE / 2;
+      const centerY = row * CELL_SIZE + CELL_SIZE / 2;
       ctx.lineWidth = 6;
       if (mark === "X") {
         ctx.strokeStyle = "#e74c3c";
@@ -198,14 +216,11 @@
     }
     
     /************ Game Logic ************/
-    // Determine if a move is legal (if the cell is empty).
     function isLegalMove(row, col) {
       return board[row][col] === null;
     }
     
-    // Check for win or draw.
     function checkGameOver() {
-      // Check rows, columns, and diagonals.
       const lines = [];
       // Rows
       for (let r = 0; r < 3; r++) {
@@ -224,7 +239,6 @@
         if (line.every(mark => mark === "O")) return "O";
       }
       
-      // Check for draw.
       if (board.flat().every(cell => cell !== null)) return "draw";
       
       return null;
@@ -237,9 +251,9 @@
       if (winner) {
         gameState = "game_over";
         if (winner === "draw") {
-          gameOverText.innerHTML = "Game Over!<br>Draw!";
+          gameOverText.innerHTML = "Game Over<br>Draw!";
         } else {
-          gameOverText.innerHTML = "Game Over!<br>" + winner + " wins!";
+          gameOverText.innerHTML = "Game Over<br>" + winner + " wins!";
         }
         showGameOver();
       } else {
@@ -262,6 +276,8 @@
     /************ Overlay & Menu Management ************/
     function hideAllScreens() {
       menuScreen.style.display = "none";
+      markChoiceScreen.style.display = "none";
+      firstMoveScreen.style.display = "none";
       instructionsScreen.style.display = "none";
       gameOverScreen.style.display = "none";
       bottomBar.style.display = "none";
@@ -271,6 +287,18 @@
       hideAllScreens();
       gameState = "menu";
       menuScreen.style.display = "flex";
+    }
+    
+    function showMarkChoice() {
+      hideAllScreens();
+      gameState = "mark_choice";
+      markChoiceScreen.style.display = "flex";
+    }
+    
+    function showFirstMoveChoice() {
+      hideAllScreens();
+      gameState = "first_move_choice";
+      firstMoveScreen.style.display = "flex";
     }
     
     function showInstructions() {
@@ -289,23 +317,81 @@
       hideAllScreens();
       gameState = "playing";
       initBoard();
-      currentPlayer = "X";
       redraw();
     }
     
     /************ Button Handlers ************/
-    document.getElementById("newGameBtn").onclick = startGame;
+    document.getElementById("newGameBtn").onclick = showMarkChoice;
     document.getElementById("instructionsBtn").onclick = showInstructions;
-    document.getElementById("gameOverNewGameBtn").onclick = showMenu;
+    
+    document.getElementById("chooseXBtn").onclick = () => {
+      playerMark = "X";
+      aiMark = "O";
+      showFirstMoveChoice();
+    };
+    document.getElementById("chooseOBtn").onclick = () => {
+      playerMark = "O";
+      aiMark = "X";
+      showFirstMoveChoice();
+    };
+    
+    document.getElementById("firstMeBtn").onclick = () => {
+      currentPlayer = playerMark;
+      startGame();
+    };
+    document.getElementById("firstYouBtn").onclick = () => {
+      currentPlayer = aiMark;
+      startGame();
+      // Trigger a simple AI move if needed.
+      setTimeout(aiTurn, 500);
+    };
+    
+    document.getElementById("gameOverNewGameBtn").onclick = showMarkChoice;
     
     document.addEventListener("keydown", (e) => {
       const key = e.key.toLowerCase();
-      if (["playing", "game_over", "instructions"].includes(gameState)) {
+      if (gameState === "mark_choice") {
+        if (key === "x") document.getElementById("chooseXBtn").click();
+        if (key === "o") document.getElementById("chooseOBtn").click();
+      } else if (gameState === "first_move_choice") {
+        if (key === "m") document.getElementById("firstMeBtn").click();
+        if (key === "y") document.getElementById("firstYouBtn").click();
+      } else if (["playing", "instructions", "game_over"].includes(gameState)) {
         if (key === "m") showMenu();
       }
     });
     
-    // Start by showing the main menu.
+    /************ AI Turn ************/
+    // Simple AI: chooses a random legal move.
+    function getAllLegalMoves() {
+      let moves = [];
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          if (board[r][c] === null) moves.push({ row: r, col: c });
+        }
+      }
+      return moves;
+    }
+    
+    function aiTurn() {
+      const moves = getAllLegalMoves();
+      if (moves.length === 0) return;
+      const move = moves[Math.floor(Math.random() * moves.length)];
+      setTimeout(() => {
+        makeMove(move.row, move.col);
+      }, 1000);
+    }
+    
+    // If it's AI's turn, simulate a click after a short delay.
+    function mainLoop() {
+      redraw();
+      if (gameState === "playing" && currentPlayer === aiMark) {
+        aiTurn();
+      }
+      requestAnimationFrame(mainLoop);
+    }
+    
+    mainLoop();
     showMenu();
   </script>
 </body>
