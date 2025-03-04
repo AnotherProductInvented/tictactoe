@@ -100,19 +100,20 @@ function checkGameOver() {
 function makeMove(row, col) {
   if (!isLegalMove(row, col) || gameState !== "playing") return;
   board[row][col] = currentPlayer;
-  const winner = checkGameOver();
+  redraw();
 
+  const winner = checkGameOver();
   if (winner) {
     gameState = "game_over";
     gameOverText.innerHTML = winner === "draw" ? "Game Over<br>It's a Draw!" : `Game Over<br>${winner} Wins!`;
     showGameOver();
-  } else {
-    currentPlayer = currentPlayer === "X" ? "O" : "X";
-    redraw();
-    
-    if (currentPlayer === aiMark) {
-      setTimeout(aiTurn, 500);
-    }
+    return;
+  }
+
+  currentPlayer = currentPlayer === "X" ? "O" : "X";
+  
+  if (currentPlayer === aiMark) {
+    setTimeout(aiTurn, 500);
   }
 }
 
@@ -129,9 +130,10 @@ function getAllLegalMoves() {
 
 function aiTurn() {
   if (gameState !== "playing") return;
-  const moves = getAllLegalMoves();
-
-  // Check if AI can win
+  
+  let moves = getAllLegalMoves();
+  
+  // 1. Win if possible
   for (let move of moves) {
     board[move.row][move.col] = aiMark;
     if (checkGameOver() === aiMark) {
@@ -141,7 +143,7 @@ function aiTurn() {
     board[move.row][move.col] = null;
   }
 
-  // Block player win
+  // 2. Block opponent's win
   for (let move of moves) {
     board[move.row][move.col] = playerMark;
     if (checkGameOver() === playerMark) {
@@ -152,7 +154,7 @@ function aiTurn() {
     board[move.row][move.col] = null;
   }
 
-  // Otherwise, play a random move
+  // 3. Pick a random move
   const move = moves[Math.floor(Math.random() * moves.length)];
   makeMove(move.row, move.col);
 }
@@ -170,7 +172,7 @@ canvas.addEventListener("click", (e) => {
 
 /************ UI Management ************/
 function hideAllScreens() {
-  menuScreen.style.display = markChoiceScreen.style.display = firstMoveScreen.style.display = instructionsScreen.style.display = gameOverScreen.style.display = "none";
+  menuScreen.style.display = markChoiceScreen.style.display = firstMoveScreen.style.display = gameOverScreen.style.display = "none";
   bottomBar.style.display = "none";
 }
 
