@@ -20,16 +20,21 @@ const CELL_SIZE = BOARD_SIZE / 3;
 
 /************ Game Setup ************/
 function initBoard() {
+  console.log("Initializing Board...");
   board = Array.from({ length: 3 }, () => Array(3).fill(null));
 }
 
 /************ Drawing Functions ************/
 function drawBoard() {
+  if (!board || board.length !== 3) {
+    console.error("Error: Board is not initialized properly.");
+    return;
+  }
+
   ctx.clearRect(0, 0, BOARD_SIZE, BOARD_SIZE);
   ctx.strokeStyle = "#333";
   ctx.lineWidth = 4;
 
-  // Draw grid lines
   ctx.beginPath();
   for (let i = 1; i < 3; i++) {
     ctx.moveTo(i * CELL_SIZE, 0);
@@ -39,7 +44,6 @@ function drawBoard() {
   }
   ctx.stroke();
 
-  // Draw marks
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 3; c++) {
       const mark = board[r][c];
@@ -99,19 +103,22 @@ function checkGameOver() {
 
 function makeMove(row, col) {
   if (!isLegalMove(row, col) || gameState !== "playing") return;
+  
   board[row][col] = currentPlayer;
   redraw();
+  console.log(`Player ${currentPlayer} moved to (${row}, ${col})`);
 
   const winner = checkGameOver();
   if (winner) {
     gameState = "game_over";
     gameOverText.innerHTML = winner === "draw" ? "Game Over<br>It's a Draw!" : `Game Over<br>${winner} Wins!`;
+    console.log(`Game Over! ${winner === "draw" ? "It's a Draw!" : `${winner} Wins!`}`);
     showGameOver();
     return;
   }
 
   currentPlayer = currentPlayer === "X" ? "O" : "X";
-  
+
   if (currentPlayer === aiMark) {
     setTimeout(aiTurn, 500);
   }
@@ -129,11 +136,10 @@ function getAllLegalMoves() {
 }
 
 function aiTurn() {
-  if (gameState !== "playing") return;
-  
+  if (gameState !== "playing" || checkGameOver() !== null) return;
+
   let moves = getAllLegalMoves();
   
-  // 1. Win if possible
   for (let move of moves) {
     board[move.row][move.col] = aiMark;
     if (checkGameOver() === aiMark) {
@@ -143,7 +149,6 @@ function aiTurn() {
     board[move.row][move.col] = null;
   }
 
-  // 2. Block opponent's win
   for (let move of moves) {
     board[move.row][move.col] = playerMark;
     if (checkGameOver() === playerMark) {
@@ -154,7 +159,6 @@ function aiTurn() {
     board[move.row][move.col] = null;
   }
 
-  // 3. Pick a random move
   const move = moves[Math.floor(Math.random() * moves.length)];
   makeMove(move.row, move.col);
 }
@@ -180,14 +184,6 @@ function showMenu() { hideAllScreens(); menuScreen.style.display = "flex"; gameS
 function showMarkChoice() { hideAllScreens(); markChoiceScreen.style.display = "flex"; gameState = "mark_choice"; }
 function showFirstMoveChoice() { hideAllScreens(); firstMoveScreen.style.display = "flex"; gameState = "first_move_choice"; }
 function showGameOver() { hideAllScreens(); gameOverScreen.style.display = "flex"; }
-
-function startGame() {
-  hideAllScreens();
-  gameState = "playing";
-  initBoard();
-  redraw();
-  if (currentPlayer === aiMark) aiTurn();
-}
 
 /************ Button Handlers ************/
 document.getElementById("newGameBtn").onclick = showMarkChoice;
