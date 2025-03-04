@@ -4,7 +4,6 @@ const ctx = canvas.getContext("2d");
 const menuScreen = document.getElementById("menuScreen");
 const markChoiceScreen = document.getElementById("markChoiceScreen");
 const firstMoveScreen = document.getElementById("firstMoveScreen");
-const instructionsScreen = document.getElementById("instructionsScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const bottomBar = document.getElementById("bottomBar");
 const messageDisplay = document.getElementById("messageDisplay");
@@ -185,7 +184,7 @@ function startGame() {
   gameState = "playing";
   initBoard();
   redraw();
-  if (currentPlayer === aiMark) setTimeout(aiTurn, 500);
+  if (currentPlayer === aiMark) aiTurn();
 }
 
 /************ Button Handlers ************/
