@@ -1,289 +1,199 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Game</title>
-    <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        #ticTacToeCanvas { background-color: #fff; }
-        .screen { display: none; position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; }
-        #bottomBar, #statsDisplay { margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div id="menuScreen" class="screen">
-        <button id="newGameBtn">New Game</button>
-        <div id="statsDisplay"></div>
-    </div>
-    <div id="markChoiceScreen" class="screen">
-        <button id="chooseXBtn">Play as X</button>
-        <button id="chooseOBtn">Play as O</button>
-    </div>
-    <div id="firstMoveScreen" class="screen">
-        <button id="firstMeBtn">I go first</button>
-        <button id="firstYouBtn">AI goes first</button>
-    </div>
-    <div id="gameOverScreen" class="screen">
-        <div id="gameOverText"></div>
-        <button onclick="showMenu()">Back to Menu</button>
-    </div>
-    <canvas id="ticTacToeCanvas" width="600" height="600"></canvas>
-    <div id="bottomBar">
-        <div id="messageDisplay"></div>
-    </div>
+/************ Global Variables & State ************/
+const canvas = document.getElementById("ticTacToeCanvas");
+const ctx = canvas.getContext("2d");
+const menuScreen = document.getElementById("menuScreen");
+const markChoiceScreen = document.getElementById("markChoiceScreen");
+const firstMoveScreen = document.getElementById("firstMoveScreen");
+const gameOverScreen = document.getElementById("gameOverScreen");
+const bottomBar = document.getElementById("bottomBar");
+const messageDisplay = document.getElementById("messageDisplay");
+const gameOverText = document.getElementById("gameOverText");
 
-    <script>
-        const canvas = document.getElementById("ticTacToeCanvas");
-        const ctx = canvas.getContext("2d");
-        const menuScreen = document.getElementById("menuScreen");
-        const markChoiceScreen = document.getElementById("markChoiceScreen");
-        const firstMoveScreen = document.getElementById("firstMoveScreen");
-        const gameOverScreen = document.getElementById("gameOverScreen");
-        const bottomBar = document.getElementById("bottomBar");
-        const messageDisplay = document.getElementById("messageDisplay");
-        const gameOverText = document.getElementById("gameOverText");
+let gameState = "menu";  
+let playerMark = null;  
+let aiMark = null;       
+let currentPlayer = "X"; 
+let board = [];          
 
-        let gameState = "menu";  
-        let playerMark = null;  
-        let aiMark = null;       
-        let currentPlayer = "X"; 
-        let board = [];          
-        let difficulty = 'medium'; // 'easy', 'medium', 'hard'
+const BOARD_SIZE = 600;
+const CELL_SIZE = BOARD_SIZE / 3;
 
-        let BOARD_SIZE = 600;
-        let CELL_SIZE = BOARD_SIZE / 3;
+/************ Game Setup ************/
+function initBoard() {
+  board = Array.from({ length: 3 }, () => Array(3).fill(null));
+}
 
-        function resizeCanvas() {
-            const size = Math.min(window.innerWidth, window.innerHeight, 600);
-            canvas.width = size;
-            canvas.height = size;
-            CELL_SIZE = size / 3;
-            drawBoard(); // Redraw board when resizing
-        }
+/************ Drawing Functions ************/
+function drawBoard() {
+  ctx.clearRect(0, 0, BOARD_SIZE, BOARD_SIZE);
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 4;
 
-        function initBoard() {
-            board = Array.from({ length: 3 }, () => Array(3).fill(null));
-        }
+  // Draw grid lines
+  ctx.beginPath();
+  for (let i = 1; i < 3; i++) {
+    ctx.moveTo(i * CELL_SIZE, 0);
+    ctx.lineTo(i * CELL_SIZE, BOARD_SIZE);
+    ctx.moveTo(0, i * CELL_SIZE);
+    ctx.lineTo(BOARD_SIZE, i * CELL_SIZE);
+  }
+  ctx.stroke();
 
-        function drawBoard() {
-            ctx.clearRect(0, 0, BOARD_SIZE, BOARD_SIZE);
-            ctx.strokeStyle = "#333";
-            ctx.lineWidth = 4;
+  // Draw marks
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      const mark = board[r][c];
+      if (mark) drawMark(r, c, mark);
+    }
+  }
+}
 
-            ctx.beginPath();
-            for (let i = 1; i < 3; i++) {
-                ctx.moveTo(i * CELL_SIZE, 0);
-                ctx.lineTo(i * CELL_SIZE, BOARD_SIZE);
-                ctx.moveTo(0, i * CELL_SIZE);
-                ctx.lineTo(BOARD_SIZE, i * CELL_SIZE);
-            }
-            ctx.stroke();
+function drawMark(row, col, mark) {
+  const centerX = col * CELL_SIZE + CELL_SIZE / 2;
+  const centerY = row * CELL_SIZE + CELL_SIZE / 2;
+  ctx.lineWidth = 6;
 
-            for (let r = 0; r < 3; r++) {
-                for (let c = 0; c < 3; c++) {
-                    const mark = board[r][c];
-                    if (mark) drawMark(r, c, mark);
-                }
-            }
-        }
+  if (mark === "X") {
+    ctx.strokeStyle = "#e74c3c";
+    ctx.beginPath();
+    ctx.moveTo(centerX - 40, centerY - 40);
+    ctx.lineTo(centerX + 40, centerY + 40);
+    ctx.moveTo(centerX + 40, centerY - 40);
+    ctx.lineTo(centerX - 40, centerY + 40);
+    ctx.stroke();
+  } else if (mark === "O") {
+    ctx.strokeStyle = "#3498db";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
 
-        function drawMark(row, col, mark) {
-            const centerX = col * CELL_SIZE + CELL_SIZE / 2;
-            const centerY = row * CELL_SIZE + CELL_SIZE / 2;
-            ctx.lineWidth = 6;
+function redraw() {
+  drawBoard();
+  messageDisplay.textContent = `Turn: ${currentPlayer}`;
+  bottomBar.style.display = "flex";
+}
 
-            if (mark === "X") {
-                ctx.strokeStyle = "#e74c3c";
-                ctx.beginPath();
-                ctx.moveTo(centerX - 40, centerY - 40);
-                ctx.lineTo(centerX + 40, centerY + 40);
-                ctx.moveTo(centerX + 40, centerY - 40);
-                ctx.lineTo(centerX - 40, centerY + 40);
-                ctx.stroke();
-            } else if (mark === "O") {
-                ctx.strokeStyle = "#3498db";
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-        }
+/************ Game Logic ************/
+function isLegalMove(row, col) {
+  return board[row][col] === null;
+}
 
-        function redraw() {
-            drawBoard();
-            messageDisplay.textContent = `Turn: ${currentPlayer}`;
-            bottomBar.style.display = "flex";
-        }
+function checkGameOver() {
+  const lines = [];
+  
+  for (let r = 0; r < 3; r++) lines.push(board[r]); 
+  for (let c = 0; c < 3; c++) lines.push([board[0][c], board[1][c], board[2][c]]); 
+  lines.push([board[0][0], board[1][1], board[2][2]]);
+  lines.push([board[0][2], board[1][1], board[2][0]]);
 
-        function isLegalMove(row, col) {
-            return board[row][col] === null;
-        }
+  for (let line of lines) {
+    if (line.every(mark => mark === "X")) return "X";
+    if (line.every(mark => mark === "O")) return "O";
+  }
 
-        function checkGameOver() {
-            const lines = [];
+  if (board.flat().every(cell => cell !== null)) return "draw";
+  return null;
+}
 
-            for (let r = 0; r < 3; r++) lines.push(board[r]);
-            for (let c = 0; c < 3; c++) lines.push([board[0][c], board[1][c], board[2][c]]);
-            lines.push([board[0][0], board[1][1], board[2][2]]);
-            lines.push([board[0][2], board[1][1], board[2][0]]);
+function makeMove(row, col) {
+  if (!isLegalMove(row, col) || gameState !== "playing") return;
+  board[row][col] = currentPlayer;
+  redraw();
 
-            for (let line of lines) {
-                if (line.every(mark => mark === "X")) return "X";
-                if (line.every(mark => mark === "O")) return "O";
-            }
+  const winner = checkGameOver();
+  if (winner) {
+    gameState = "game_over";
+    gameOverText.innerHTML = winner === "draw" ? "Game Over<br>It's a Draw!" : `Game Over<br>${winner} Wins!`;
+    showGameOver();
+    return;
+  }
 
-            if (board.flat().every(cell => cell !== null)) return "draw";
-            return null;
-        }
+  currentPlayer = currentPlayer === "X" ? "O" : "X";
+  
+  if (currentPlayer === aiMark) {
+    setTimeout(aiTurn, 500);
+  }
+}
 
-        function makeMove(row, col) {
-            if (!isLegalMove(row, col) || gameState !== "playing") return;
-            board[row][col] = currentPlayer;
-            redraw();
+/************ AI Logic ************/
+function getAllLegalMoves() {
+  let moves = [];
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      if (board[r][c] === null) moves.push({ row: r, col: c });
+    }
+  }
+  return moves;
+}
 
-            const winner = checkGameOver();
-            if (winner) {
-                gameState = "game_over";
-                gameOverText.innerHTML = winner === "draw" ? "Game Over<br>It's a Draw!" : `Game Over<br>${winner} Wins!`;
-                showGameOver();
-                updateStatistics(winner);
-                return;
-            }
+function aiTurn() {
+  if (gameState !== "playing") return;
+  
+  let moves = getAllLegalMoves();
+  
+  // 1. Win if possible
+  for (let move of moves) {
+    board[move.row][move.col] = aiMark;
+    if (checkGameOver() === aiMark) {
+      makeMove(move.row, move.col);
+      return;
+    }
+    board[move.row][move.col] = null;
+  }
 
-            currentPlayer = currentPlayer === "X" ? "O" : "X";
-            
-            if (currentPlayer === aiMark) {
-                setTimeout(aiTurn, 500);
-            }
-        }
+  // 2. Block opponent's win
+  for (let move of moves) {
+    board[move.row][move.col] = playerMark;
+    if (checkGameOver() === playerMark) {
+      board[move.row][move.col] = aiMark;
+      makeMove(move.row, move.col);
+      return;
+    }
+    board[move.row][move.col] = null;
+  }
 
-        function getAllLegalMoves() {
-            let moves = [];
-            for (let r = 0; r < 3; r++) {
-                for (let c = 0; c < 3; c++) {
-                    if (board[r][c] === null) moves.push({ row: r, col: c });
-                }
-            }
-            return moves;
-        }
+  // 3. Pick a random move
+  const move = moves[Math.floor(Math.random() * moves.length)];
+  makeMove(move.row, move.col);
+}
 
-        function aiTurn() {
-            if (gameState !== "playing") return;
-            
-            let moves = getAllLegalMoves();
-            let move;
+/************ Input Handling ************/
+canvas.addEventListener("click", (e) => {
+  if (gameState !== "playing" || currentPlayer !== playerMark) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const col = Math.floor(x / CELL_SIZE);
+  const row = Math.floor(y / CELL_SIZE);
+  makeMove(row, col);
+});
 
-            switch (difficulty) {
-                case 'easy':
-                    move = moves[Math.floor(Math.random() * moves.length)];
-                    break;
-                case 'medium':
-                    move = findBestMove(moves);
-                    break;
-                case 'hard':
-                    move = findStrategicMove(moves);
-                    break;
-            }
+/************ UI Management ************/
+function hideAllScreens() {
+  menuScreen.style.display = markChoiceScreen.style.display = firstMoveScreen.style.display = gameOverScreen.style.display = "none";
+  bottomBar.style.display = "none";
+}
 
-            makeMove(move.row, move.col);
-        }
+function showMenu() { hideAllScreens(); menuScreen.style.display = "flex"; gameState = "menu"; }
+function showMarkChoice() { hideAllScreens(); markChoiceScreen.style.display = "flex"; gameState = "mark_choice"; }
+function showFirstMoveChoice() { hideAllScreens(); firstMoveScreen.style.display = "flex"; gameState = "first_move_choice"; }
+function showGameOver() { hideAllScreens(); gameOverScreen.style.display = "flex"; }
 
-        function findBestMove(moves) {
-            for (let move of moves) {
-                board[move.row][move.col] = aiMark;
-                if (checkGameOver() === aiMark) {
-                    board[move.row][move.col] = null;
-                    return move;
-                }
-                board[move.row][move.col] = null;
-            }
+function startGame() {
+  hideAllScreens();
+  gameState = "playing";
+  initBoard();
+  redraw();
+  if (currentPlayer === aiMark) aiTurn();
+}
 
-            for (let move of moves) {
-                board[move.row][move.col] = playerMark;
-                if (checkGameOver() === playerMark) {
-                    board[move.row][move.col] = aiMark;
-                    return move;
-                }
-                board[move.row][move.col] = null;
-            }
+/************ Button Handlers ************/
+document.getElementById("newGameBtn").onclick = showMarkChoice;
+document.getElementById("chooseXBtn").onclick = () => { playerMark = "X"; aiMark = "O"; showFirstMoveChoice(); };
+document.getElementById("chooseOBtn").onclick = () => { playerMark = "O"; aiMark = "X"; showFirstMoveChoice(); };
+document.getElementById("firstMeBtn").onclick = () => { currentPlayer = playerMark; startGame(); };
+document.getElementById("firstYouBtn").onclick = () => { currentPlayer = aiMark; startGame(); };
 
-            return moves[Math.floor(Math.random() * moves.length)]; // Default random move
-        }
-
-        function findStrategicMove(moves) {
-            // Implement more advanced strategies
-            return moves[Math.floor(Math.random() * moves.length)]; // Placeholder
-        }
-
-        canvas.addEventListener("click", (e) => {
-            if (gameState !== "playing" || currentPlayer !== playerMark) return;
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const col = Math.floor(x / CELL_SIZE);
-            const row = Math.floor(y / CELL_SIZE);
-            makeMove(row, col);
-        });
-
-        function hideAllScreens() {
-            menuScreen.style.display = markChoiceScreen.style.display = firstMoveScreen.style.display = gameOverScreen.style.display = "none";
-            bottomBar.style.display = "none";
-        }
-
-        function showMenu() {
-            hideAllScreens();
-            menuScreen.style.display = "flex";
-            gameState = "menu";
-            displayStatistics();
-        }
-
-        function showMarkChoice() {
-            hideAllScreens();
-            markChoiceScreen.style.display = "flex";
-            gameState = "mark_choice";
-        }
-
-        function showFirstMoveChoice() {
-            hideAllScreens();
-            firstMoveScreen.style.display = "flex";
-            gameState = "first_move_choice";
-        }
-
-        function showGameOver() {
-            hideAllScreens();
-            gameOverScreen.style.display = "flex";
-        }
-
-        function startGame() {
-            hideAllScreens();
-            gameState = "playing";
-            initBoard();
-            redraw();
-            if (currentPlayer === aiMark) aiTurn();
-        }
-
-        document.getElementById("newGameBtn").onclick = showMarkChoice;
-        document.getElementById("chooseXBtn").onclick = () => { playerMark = "X"; aiMark = "O"; showFirstMoveChoice(); };
-        document.getElementById("chooseOBtn").onclick = () => { playerMark = "O"; aiMark = "X"; showFirstMoveChoice(); };
-        document.getElementById("firstMeBtn").onclick = () => { currentPlayer = playerMark; startGame(); };
-        document.getElementById("firstYouBtn").onclick = () => { currentPlayer = aiMark; startGame(); };
-
-        function updateStatistics(result) {
-            let stats = JSON.parse(localStorage.getItem('ticTacToeStats')) || { wins: 0, losses: 0, draws: 0 };
-            if (result === playerMark) stats.wins++;
-            else if (result === aiMark) stats.losses++;
-            else stats.draws++;
-            localStorage.setItem('ticTacToeStats', JSON.stringify(stats));
-        }
-
-        function displayStatistics() {
-            let stats = JSON.parse(localStorage.getItem('ticTacToeStats')) || { wins: 0, losses: 0, draws: 0 };
-            document.getElementById('statsDisplay').textContent = `Wins: ${stats.wins}, Losses: ${stats.losses}, Draws: ${stats.draws}`;
-        }
-
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-        showMenu();
-    </script>
-</body>
-</html>
+showMenu();
