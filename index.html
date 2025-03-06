@@ -2,216 +2,131 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Another Product Invented Tic Tac Toe</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Another Product Invented – Tic Tac Toe</title>
   <style>
-    /* Base Styles */
-    body {
-      margin: 0;
-      padding: 0;
-      background: #fff;
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-    }
-    h1 {
-      margin: 1rem 0 0.5rem;
-      text-align: center;
-      line-height: 1.2;
-    }
-    /* Container & Canvas */
-    #gameContainer {
-      position: relative;
-      width: 360px;
-      max-width: 100%;
-      margin-bottom: 10px;
-    }
-    canvas {
-      display: block;
-      background: #eee;
-      width: 100%;
-      height: auto;
-      border: 2px solid #333;
-      touch-action: none;
-    }
-    /* Overlays */
-    .overlayScreen {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.95);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      z-index: 10;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    button {
-      font-size: 18px;
-      margin: 10px;
-      padding: 10px 20px;
-      cursor: pointer;
-    }
-    /* Logo */
-    #logo {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      max-width: 100px;
-      z-index: 2000;
-    }
+    /* your CSS here */
   </style>
 </head>
 <body>
-  <!-- Two-line Header -->
-  <h1>Another Product Invented<br>Tic Tac Toe</h1>
-  
-  <!-- Game Container -->
-  <div id="gameContainer">
-    <!-- Main Menu Overlay -->
-    <div id="menuScreen" class="overlayScreen" style="display: flex;">
-      <button id="newGameBtn">New Game</button>
-      <button id="instructionsBtn">Instructions</button>
-    </div>
-    <!-- Difficulty Selection Overlay -->
-    <div id="difficultyScreen" class="overlayScreen">
-      <p>Select Difficulty:</p>
-      <button id="easyBtn">Easy [E]</button>
-      <button id="mediumBtn">Medium [M]</button>
-      <button id="hardBtn">Hard [H]</button>
-    </div>
-    <!-- Instructions Overlay -->
-    <div id="instructionsScreen" class="overlayScreen">
-      <h2>How to Play Tic Tac Toe</h2>
-      <p>
-        The game is played on a 3×3 grid.<br>
-        Players take turns placing Xs and Os on the board.<br>
-        The first player to get three in a row (horizontally, vertically, or diagonally) wins.<br>
-        If all spaces are filled and no player has won, the game is a draw.
-      </p>
-      <p>Press [M] to return to the Main Menu.</p>
-    </div>
-    <!-- Game Over Overlay -->
-    <div id="gameOverScreen" class="overlayScreen">
-      <h2 id="gameOverText"></h2>
-      <button id="gameOverNewGameBtn">New Game</button>
-      <p>Press [M] to return to the Main Menu.</p>
-    </div>
-    
-    <!-- The Game Canvas -->
-    <canvas id="ticTacToeCanvas" width="360" height="360"></canvas>
+
+<h1>Another Product Invented<br>Tic Tac Toe</h1>
+
+<div id="gameContainer">
+  <canvas id="gameCanvas" width="360" height="360"></canvas>
+
+  <div id="menuScreen" class="overlayScreen">
+    <button id="newGameBtn">New Game</button>
+    <button id="instructionsBtn">Instructions</button>
   </div>
 
-  <!-- Logo -->
-  <img id="logo" src="logo.png" alt="Logo">
-  
-  <script>
-    /************ Global Variables & State ************/
-    const canvas = document.getElementById("ticTacToeCanvas");
-    const ctx = canvas.getContext("2d");
-    const menuScreen = document.getElementById("menuScreen");
-    const difficultyScreen = document.getElementById("difficultyScreen");
-    const instructionsScreen = document.getElementById("instructionsScreen");
-    const gameOverScreen = document.getElementById("gameOverScreen");
-    const gameOverText = document.getElementById("gameOverText");
+  <div id="playerChoiceScreen" class="overlayScreen" style="display:none;">
+    <p>Choose your mark (X always goes first):</p>
+    <button id="chooseX">X</button>
+    <button id="chooseO">O</button>
+  </div>
 
-    let gameState = "menu"; // "menu", "difficulty_choice", "playing", "instructions", "game_over"
-    let difficulty = "easy";
-    let currentPlayer = "X"; // X always starts
-    let board = Array(3).fill().map(() => Array(3).fill(null));
-    let aiThinking = false;
+  <div id="difficultyScreen" class="overlayScreen" style="display:none;">
+    <p>Select Difficulty:</p>
+    <button id="easyBtn">Easy</button>
+    <button id="mediumBtn">Medium</button>
+    <button id="hardBtn">Hard</button>
+  </div>
 
-    const CELL_SIZE = canvas.width / 3;
+  <div id="instructionsScreen" class="overlayScreen" style="display:none;">
+    <h2>How to Play Tic Tac Toe</h2>
+    <p>Players take turns placing Xs and Os on a 3×3 grid.</p>
+    <p>The first to get three in a row, column, or diagonally wins.</p>
+    <p><strong>Press [M] to return to the Main Menu.</strong></p>
+  </div>
 
-    /************ Drawing Functions ************/
-    function drawBoard() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth = 4;
+  <div id="gameOverScreen" class="overlayScreen" style="display:none;">
+    <h2 id="resultText"></h2>
+    <button id="gameOverNewGame">New Game</button>
+    <p><strong>Press [M] to return to the Main Menu.</strong></p>
+  </div>
+</div>
 
-      for (let i = 1; i < 3; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * CELL_SIZE, 0);
-        ctx.lineTo(i * CELL_SIZE, canvas.height);
-        ctx.stroke();
+<img id="logo" src="logo.png" alt="Logo">
 
-        ctx.beginPath();
-        ctx.moveTo(0, i * CELL_SIZE);
-        ctx.lineTo(canvas.width, i * CELL_SIZE);
-        ctx.stroke();
-      }
+<script>
+let canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), board, playerMark, aiMark, currentPlayer, gameActive = false, difficulty = 'easy';
 
-      for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 3; c++) {
-          const mark = board[r][c];
-          if (mark) {
-            ctx.font = "bold 80px sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(mark, c * CELL_SIZE + CELL_SIZE / 2, r * CELL_SIZE + CELL_SIZE / 2);
-          }
-        }
-      }
+function showScreen(id) {
+  document.querySelectorAll('.overlayScreen').forEach(s => s.style.display = 'none');
+  if(id) document.getElementById(id).style.display = 'flex';
+}
+
+function resetGame() {
+  board = Array(9).fill(null);
+  currentPlayer = 'X';
+  gameActive = true;
+  drawBoard();
+  showScreen('');
+  if (aiMark === 'X') setTimeout(aiMove, 500);
+}
+
+canvas.onclick = e => {
+  if (!gameActive || currentPlayer !== playerMark) return;
+  const rect = canvas.getBoundingClientRect(),
+        x = Math.floor((e.clientX - rect.left) / 120),
+        y = Math.floor((e.clientY - rect.top) / 120),
+        idx = y * 3 + x;
+  if (board[idx]) return;
+  board[idx] = playerMark;
+  currentPlayer = aiMark;
+  drawBoard();
+  checkGameOver();
+  if (gameActive) setTimeout(aiMove, 500);
+};
+
+function aiMove() {
+  let empty = board.map((c, i) => !c ? i : null).filter(x => x !== null);
+  let idx = empty[Math.floor(Math.random() * empty.length)];
+  board[idx] = aiMark;
+  currentPlayer = playerMark;
+  drawBoard();
+  checkGameOver();
+}
+
+function checkGameOver() {
+  const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  let winner = wins.find(([a,b,c]) => board[a] && board[a]===board[b] && board[a]===board[c]);
+  if (winner || !board.includes(null)) {
+    gameActive = false;
+    document.getElementById('resultText').textContent = winner ? (board[winner[0]] === playerMark ? 'You Win!' : 'You Lose!') : 'Draw!';
+    showScreen('gameOverScreen');
+  }
+}
+
+function drawBoard() {
+  ctx.clearRect(0, 0, 360, 360); ctx.strokeStyle="#000"; ctx.lineWidth=3;
+  [120,240].forEach(pos=>{
+    ctx.beginPath();ctx.moveTo(pos,0);ctx.lineTo(pos,360);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,pos);ctx.lineTo(360,pos);ctx.stroke();
+  });
+  board.forEach((mark,i)=>{
+    if(mark){
+      ctx.font='80px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(mark, (i%3)*120+60, Math.floor(i/3)*120+60);
     }
+  });
+}
 
-    /************ Game Logic ************/
-    function checkWin() {
-      const lines = [
-        ...board, // Rows
-        [board[0][0], board[1][0], board[2][0]], // Columns
-        [board[0][1], board[1][1], board[2][1]],
-        [board[0][2], board[1][2], board[2][2]],
-        [board[0][0], board[1][1], board[2][2]], // Diagonals
-        [board[0][2], board[1][1], board[2][0]],
-      ];
-      for (let line of lines) {
-        if (line.every(cell => cell === "X")) return "X";
-        if (line.every(cell => cell === "O")) return "O";
-      }
-      if (board.flat().every(cell => cell !== null)) return "Draw";
-      return null;
-    }
+document.getElementById('newGameBtn').onclick=()=>showScreen('playerChoiceScreen');
+document.getElementById('instructionsBtn').onclick=()=>showScreen('instructionsScreen');
+document.getElementById('chooseX').onclick=()=>{playerMark='X';aiMark='O';showScreen('difficultyScreen');};
+document.getElementById('chooseO').onclick=()=>{playerMark='O';aiMark='X';showScreen('difficultyScreen');};
 
-    function aiMove() {
-      if (aiThinking || currentPlayer !== "O") return;
-      aiThinking = true;
-      setTimeout(() => {
-        let moves = board.flatMap((row, r) => row.map((cell, c) => cell === null ? [r, c] : null)).filter(x => x);
-        let move = moves[Math.floor(Math.random() * moves.length)];
-        board[move[0]][move[1]] = "O";
-        currentPlayer = "X";
-        aiThinking = false;
-        checkGameOver();
-        drawBoard();
-      }, 500);
-    }
+document.getElementById('easyBtn').onclick=()=>{difficulty='easy';resetGame();};
+document.getElementById('mediumBtn').onclick=()=>{difficulty='medium';resetGame();};
+document.getElementById('hardBtn').onclick=()=>{difficulty='hard';resetGame();};
 
-    function checkGameOver() {
-      let winner = checkWin();
-      if (winner) {
-        gameState = "game_over";
-        gameOverText.innerHTML = winner === "Draw" ? "It's a Draw!" : `${winner} Wins!`;
-        gameOverScreen.style.display = "flex";
-      }
-    }
+document.getElementById('gameOverNewGame').onclick=()=>showScreen('playerChoiceScreen');
 
-    canvas.addEventListener("click", (e) => {
-      let r = Math.floor(e.offsetY / CELL_SIZE);
-      let c = Math.floor(e.offsetX / CELL_SIZE);
-      if (board[r][c] === null && currentPlayer === "X") {
-        board[r][c] = "X";
-        currentPlayer = "O";
-        checkGameOver();
-        drawBoard();
-        aiMove();
-      }
-    });
+document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='m')showScreen('menuScreen');});
 
-    drawBoard();
-  </script>
+showScreen('menuScreen');
+</script>
+
 </body>
 </html>
