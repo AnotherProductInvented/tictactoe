@@ -4,129 +4,179 @@
   <meta charset="UTF-8">
   <title>Another Product Invented – Tic Tac Toe</title>
   <style>
-    /* your CSS here */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      margin: 1rem 0 0.5rem;
+      text-align: center;
+      line-height: 1.2;
+    }
+    #gameContainer {
+      position: relative;
+      width: 360px;
+      max-width: 100%;
+      margin-bottom: 10px;
+    }
+    canvas {
+      display: block;
+      background: #eee;
+      width: 100%;
+      height: auto;
+      border: 2px solid #333;
+      touch-action: none;
+    }
+    .overlayScreen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.95);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+      z-index: 10;
+    }
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    #logo {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      max-width: 100px;
+      z-index: 2000;
+    }
   </style>
 </head>
 <body>
 
-<h1>Another Product Invented<br>Tic Tac Toe</h1>
+  <h1>Another Product Invented<br>Tic Tac Toe</h1>
 
-<div id="gameContainer">
-  <canvas id="gameCanvas" width="360" height="360"></canvas>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="360" height="360"></canvas>
 
-  <div id="menuScreen" class="overlayScreen">
-    <button id="newGameBtn">New Game</button>
-    <button id="instructionsBtn">Instructions</button>
+    <div id="menuScreen" class="overlayScreen" style="display:flex;">
+      <button id="newGameBtn">New Game</button>
+      <button id="instructionsBtn">Instructions</button>
+    </div>
+
+    <div id="playerChoiceScreen" class="overlayScreen">
+      <p>Choose your mark (X always goes first):</p>
+      <button id="chooseX">X</button>
+      <button id="chooseO">O</button>
+    </div>
+
+    <div id="difficultyScreen" class="overlayScreen">
+      <p>Select Difficulty:</p>
+      <button id="easyBtn">Easy</button>
+      <button id="mediumBtn">Medium</button>
+      <button id="hardBtn">Hard</button>
+    </div>
+
+    <div id="instructionsScreen" class="overlayScreen">
+      <h2>How to Play Tic Tac Toe</h2>
+      <p>Players take turns placing Xs and Os on a 3×3 grid.</p>
+      <p>The first to get three in a row, column, or diagonally wins.</p>
+      <p><strong>Press [M] to return to the Main Menu.</strong></p>
+    </div>
+
+    <div id="gameOverScreen" class="overlayScreen">
+      <h2 id="resultText"></h2>
+      <button id="gameOverNewGame">New Game</button>
+      <p><strong>Press [M] to return to the Main Menu.</strong></p>
+    </div>
   </div>
 
-  <div id="playerChoiceScreen" class="overlayScreen" style="display:none;">
-    <p>Choose your mark (X always goes first):</p>
-    <button id="chooseX">X</button>
-    <button id="chooseO">O</button>
-  </div>
+  <img id="logo" src="logo.png" alt="Logo">
 
-  <div id="difficultyScreen" class="overlayScreen" style="display:none;">
-    <p>Select Difficulty:</p>
-    <button id="easyBtn">Easy</button>
-    <button id="mediumBtn">Medium</button>
-    <button id="hardBtn">Hard</button>
-  </div>
+  <script>
+    let canvas=document.getElementById('gameCanvas'), ctx=canvas.getContext('2d'), board, playerMark, aiMark, currentPlayer, gameActive=false, difficulty='easy';
 
-  <div id="instructionsScreen" class="overlayScreen" style="display:none;">
-    <h2>How to Play Tic Tac Toe</h2>
-    <p>Players take turns placing Xs and Os on a 3×3 grid.</p>
-    <p>The first to get three in a row, column, or diagonally wins.</p>
-    <p><strong>Press [M] to return to the Main Menu.</strong></p>
-  </div>
-
-  <div id="gameOverScreen" class="overlayScreen" style="display:none;">
-    <h2 id="resultText"></h2>
-    <button id="gameOverNewGame">New Game</button>
-    <p><strong>Press [M] to return to the Main Menu.</strong></p>
-  </div>
-</div>
-
-<img id="logo" src="logo.png" alt="Logo">
-
-<script>
-let canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), board, playerMark, aiMark, currentPlayer, gameActive = false, difficulty = 'easy';
-
-function showScreen(id) {
-  document.querySelectorAll('.overlayScreen').forEach(s => s.style.display = 'none');
-  if(id) document.getElementById(id).style.display = 'flex';
-}
-
-function resetGame() {
-  board = Array(9).fill(null);
-  currentPlayer = 'X';
-  gameActive = true;
-  drawBoard();
-  showScreen('');
-  if (aiMark === 'X') setTimeout(aiMove, 500);
-}
-
-canvas.onclick = e => {
-  if (!gameActive || currentPlayer !== playerMark) return;
-  const rect = canvas.getBoundingClientRect(),
-        x = Math.floor((e.clientX - rect.left) / 120),
-        y = Math.floor((e.clientY - rect.top) / 120),
-        idx = y * 3 + x;
-  if (board[idx]) return;
-  board[idx] = playerMark;
-  currentPlayer = aiMark;
-  drawBoard();
-  checkGameOver();
-  if (gameActive) setTimeout(aiMove, 500);
-};
-
-function aiMove() {
-  let empty = board.map((c, i) => !c ? i : null).filter(x => x !== null);
-  let idx = empty[Math.floor(Math.random() * empty.length)];
-  board[idx] = aiMark;
-  currentPlayer = playerMark;
-  drawBoard();
-  checkGameOver();
-}
-
-function checkGameOver() {
-  const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-  let winner = wins.find(([a,b,c]) => board[a] && board[a]===board[b] && board[a]===board[c]);
-  if (winner || !board.includes(null)) {
-    gameActive = false;
-    document.getElementById('resultText').textContent = winner ? (board[winner[0]] === playerMark ? 'You Win!' : 'You Lose!') : 'Draw!';
-    showScreen('gameOverScreen');
-  }
-}
-
-function drawBoard() {
-  ctx.clearRect(0, 0, 360, 360); ctx.strokeStyle="#000"; ctx.lineWidth=3;
-  [120,240].forEach(pos=>{
-    ctx.beginPath();ctx.moveTo(pos,0);ctx.lineTo(pos,360);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(0,pos);ctx.lineTo(360,pos);ctx.stroke();
-  });
-  board.forEach((mark,i)=>{
-    if(mark){
-      ctx.font='80px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(mark, (i%3)*120+60, Math.floor(i/3)*120+60);
+    function showScreen(id){
+      document.querySelectorAll('.overlayScreen').forEach(s=>s.style.display='none');
+      if(id) document.getElementById(id).style.display='flex';
     }
-  });
-}
 
-document.getElementById('newGameBtn').onclick=()=>showScreen('playerChoiceScreen');
-document.getElementById('instructionsBtn').onclick=()=>showScreen('instructionsScreen');
-document.getElementById('chooseX').onclick=()=>{playerMark='X';aiMark='O';showScreen('difficultyScreen');};
-document.getElementById('chooseO').onclick=()=>{playerMark='O';aiMark='X';showScreen('difficultyScreen');};
+    function resetGame(){
+      board=Array(9).fill(null);
+      currentPlayer='X';
+      gameActive=true;
+      drawBoard();
+      showScreen('');
+      if(aiMark==='X')setTimeout(aiMove,500);
+    }
 
-document.getElementById('easyBtn').onclick=()=>{difficulty='easy';resetGame();};
-document.getElementById('mediumBtn').onclick=()=>{difficulty='medium';resetGame();};
-document.getElementById('hardBtn').onclick=()=>{difficulty='hard';resetGame();};
+    canvas.onclick=e=>{
+      if(!gameActive||currentPlayer!==playerMark)return;
+      const rect=canvas.getBoundingClientRect(),x=Math.floor((e.clientX-rect.left)/120),y=Math.floor((e.clientY-rect.top)/120),idx=y*3+x;
+      if(board[idx])return;
+      board[idx]=playerMark;
+      currentPlayer=aiMark;
+      drawBoard();
+      checkGameOver();
+      if(gameActive)setTimeout(aiMove,500);
+    };
 
-document.getElementById('gameOverNewGame').onclick=()=>showScreen('playerChoiceScreen');
+    function aiMove(){
+      let empty=board.map((c,i)=>!c?i:null).filter(x=>x!==null);
+      let idx=empty[Math.floor(Math.random()*empty.length)];
+      board[idx]=aiMark;
+      currentPlayer=playerMark;
+      drawBoard();
+      checkGameOver();
+    }
 
-document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='m')showScreen('menuScreen');});
+    function checkGameOver(){
+      const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      let winner=wins.find(([a,b,c])=>board[a]&&board[a]===board[b]&&board[a]===board[c]);
+      if(winner||!board.includes(null)){
+        gameActive=false;
+        document.getElementById('resultText').textContent=winner?(board[winner[0]]===playerMark?'You Win!':'You Lose!'):'Draw!';
+        showScreen('gameOverScreen');
+      }
+    }
 
-showScreen('menuScreen');
-</script>
+    function drawBoard(){
+      ctx.clearRect(0,0,360,360);ctx.strokeStyle="#000";ctx.lineWidth=3;
+      [120,240].forEach(pos=>{
+        ctx.beginPath();ctx.moveTo(pos,0);ctx.lineTo(pos,360);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(0,pos);ctx.lineTo(360,pos);ctx.stroke();
+      });
+      board.forEach((mark,i)=>{
+        if(mark){
+          ctx.font='80px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillText(mark,(i%3)*120+60,Math.floor(i/3)*120+60);
+        }
+      });
+    }
+
+    document.getElementById('newGameBtn').onclick=()=>showScreen('playerChoiceScreen');
+    document.getElementById('instructionsBtn').onclick=()=>showScreen('instructionsScreen');
+    document.getElementById('chooseX').onclick=()=>{playerMark='X';aiMark='O';showScreen('difficultyScreen');};
+    document.getElementById('chooseO').onclick=()=>{playerMark='O';aiMark='X';showScreen('difficultyScreen');};
+
+    document.getElementById('easyBtn').onclick=()=>{difficulty='easy';resetGame();};
+    document.getElementById('mediumBtn').onclick=()=>{difficulty='medium';resetGame();};
+    document.getElementById('hardBtn').onclick=()=>{difficulty='hard';resetGame();};
+
+    document.getElementById('gameOverNewGame').onclick=()=>showScreen('playerChoiceScreen');
+
+    document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='m')showScreen('menuScreen');});
+
+    showScreen('menuScreen');
+  </script>
 
 </body>
 </html>
